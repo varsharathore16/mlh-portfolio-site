@@ -5,3 +5,4 @@ __pycache__
 virtualenv/
 # databse
 *.sqlite
+python3-virtualenv
