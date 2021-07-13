@@ -30,9 +30,10 @@ jobs:
           
       - name: Print directories
         run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && ls'
+        
+      - name: Deploy site
+        run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && git fetch && git reset --hard origin/master && docker-compose up -d --build'
       
       - name: Print container status
         run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && docker-compose ps'
         
-      - name: Deploy site
-        run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && git fetch && git reset --hard origin/master && docker-compose up -d --build'
