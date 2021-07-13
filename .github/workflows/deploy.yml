@@ -1,14 +1,14 @@
 name: Deploy
 
 on:
-  push:
+  push: 
     branches:
       - master
   workflow_dispatch:
 
-jobs:
-  deploy:
-    name: "Deploy to AWS EC2 Virtual Machine"
+jobs: 
+  deploy: 
+    name: "Deploy to AWs EC2 Virtual Machine"
     runs-on: ubuntu-latest
     steps:
       - name: Configure SSH
@@ -27,9 +27,25 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_IP: ${{ secrets.SSH_IP }}
-          
-      - name: Check the directories
-        run: ssh my-vm 'ls -a'
-
+      
       - name: Deploy site
         run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && git fetch && git reset --hard origin/master && docker-compose up -d --build'
+
+      - name: Print container status
+        run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && docker-compose ps'
+
+      - name: Checkout github
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Check the access Login & Register
+        run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && bash prod-test.sh'
+
+      - name: Discord notification on deployment right
+        if: ${{ !failure() }}
+        run: curl -s -X POST "${{ secrets.DISCORD_WEBHOOK }}" -d "content=🚀 Deployment Successful"
+      
+      - name: Discord notification on deployment error
+        if: ${{ failure() }}
+        run: curl -s -X POST "${{ secrets.DISCORD_WEBHOOK }}" -d "content=💀 Deployment Failed"
