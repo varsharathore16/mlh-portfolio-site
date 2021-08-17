@@ -1,13 +1,13 @@
 name: Deploy
 
 on:
-  push: 
+  push:
     branches:
       - master
   workflow_dispatch:
 
-jobs: 
-  deploy: 
+jobs:
+  deploy:
     name: "Deploy to AWS EC2 Virtual Machine"
     runs-on: ubuntu-latest
     steps:
@@ -27,13 +27,22 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_IP: ${{ secrets.SSH_IP }}
-          
-      - name: Print directories
-        run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && ls'
-        
+
       - name: Deploy site
         run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && git fetch && git reset --hard origin/master && docker-compose down && docker-compose up -d --build'
-      
-      - name: Print container status
+
+      - name: Check deploy status
         run: ssh my-vm 'cd ${{ secrets.PROJECT_ROOT }} && docker-compose ps'
-        
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Verify deployment
+        run: sleep 5 && bash prod-test.sh
+
+      - name: Discord success notification
+        run: curl -s -X POST "${{ secrets.DISCORD_WEBHOOK }}" -d "content=🚀 Deployment Successful. Check it out at https://pod-3-3-1-demo.duckdns.org"
+
+      - name: Discord failure notification
+        if: ${{ failure() }}
+        run: curl -s -X POST "${{ secrets.DISCORD_WEBHOOK }}" -d "content=🚨 Deployment Failed."
